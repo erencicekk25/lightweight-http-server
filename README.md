@@ -1,5 +1,10 @@
 # lightweight-http-server
 
+[![CI](https://github.com/erencicekk25/lightweight-http-server/actions/workflows/ci.yml/badge.svg)](https://github.com/erencicekk25/lightweight-http-server/actions/workflows/ci.yml)
+![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
+![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 Hiçbir harici kütüphane kullanmadan, doğrudan işletim sisteminin soket API'si üzerine yazılmış küçük bir HTTP/1.1 sunucusu. Modern C++17 ile yazıldı; Windows'ta Winsock, Linux ve macOS'ta BSD soketleriyle çalışıyor.
 
 Bu projeyi yazmamın asıl sebebi şuydu: her gün kullandığımız `fetch`, `curl` ya da bir REST çağrısının arka planında aslında ne olduğunu kendi gözümle görmek. Express, Spring veya ASP.NET gibi çatılar bu katmanı o kadar iyi gizliyor ki, bir isteğin TCP bağlantısındaki ham baytlardan nasıl bir "request" nesnesine dönüştüğü çoğu zaman merak konusu olarak kalıyor. Burada o yolun tamamı, okunabilir birkaç yüz satır kodun içinde.
@@ -32,6 +37,16 @@ cmake --build build
 ```
 
 > Küçük bir not: Proje klasörünün yolunda Türkçe karakter (ş, ç, ğ gibi) varsa `MinGW Makefiles` jeneratörü kaynak dosyaları bulamayabiliyor. Ninja'da ya da MSVC'de bu sorun yok.
+
+### Testler
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+Test paketi de harici kütüphane kullanmıyor. Parser'ın doğru ve hatalı girdilerdeki davranışını, yanıt çerçevelemesini (HEAD, 204, `Content-Length`) ve JSON üreticiyi birim testleriyle kontrol ediyor. Sonunda sunucuyu rastgele bir portta gerçekten ayağa kaldırıp gerçek soketler üzerinden routing, 404/405/500, bozuk istek ve pipelining senaryolarını uçtan uca deniyor.
+
+Her push'ta GitHub Actions aynı testleri Linux, macOS ve Windows'ta, ayrıca Linux'ta AddressSanitizer ve UndefinedBehaviorSanitizer açıkken çalıştırıyor.
 
 ## Çalıştırma
 
@@ -325,9 +340,13 @@ lightweight-http-server/
 ├── CMakeLists.txt          # C++17, lhs_core kütüphanesi + lhs_server CLI
 ├── include/
 │   └── HttpServer.hpp      # Public API: request/response, parser, server
-└── src/
-    ├── HttpServer.cpp      # Soket katmanı, parser, router, yanıt üretici
-    └── main.cpp            # CLI ve örnek REST uç noktaları
+├── src/
+│   ├── HttpServer.cpp      # Soket katmanı, parser, router, yanıt üretici
+│   └── main.cpp            # CLI ve örnek REST uç noktaları
+├── tests/
+│   └── HttpServerTests.cpp # Birim testleri + gerçek soketlerle uçtan uca test
+└── .github/workflows/
+    └── ci.yml              # Linux / macOS / Windows + sanitizer CI
 ```
 
 ## Bilinçli olarak dışarıda bırakılanlar
