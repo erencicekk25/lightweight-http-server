@@ -210,6 +210,11 @@ public:
     ServerStats stats() const;
     const ServerConfig& config() const noexcept { return config_; }
 
+    // Port the listener is actually bound to. Useful when the configured port
+    // is 0 and the operating system picks a free one. Returns 0 until the
+    // server is listening.
+    std::uint16_t boundPort() const noexcept { return boundPort_.load(); }
+
     // Thread-safe logging helper used for the access log and lifecycle messages.
     void log(const std::string& message) const;
 
@@ -247,6 +252,7 @@ private:
     mutable std::mutex routesMutex_;
 
     std::atomic<bool> running_{false};
+    std::atomic<std::uint16_t> boundPort_{0};
     NativeSocket listener_ = kInvalidSocket;
     std::vector<std::thread> workers_;
 

@@ -831,6 +831,14 @@ void HttpServer::openListener() {
         closeSocket(listener);
         throw std::runtime_error("listen() failed: " + reason);
     }
+    // With port 0 the kernel assigns an ephemeral port; ask which one we got.
+    sockaddr_in bound{};
+    SockLen boundLength = sizeof(bound);
+    if (::getsockname(toRaw(listener), reinterpret_cast<sockaddr*>(&bound), &boundLength) == 0) {
+        boundPort_.store(ntohs(bound.sin_port));
+    } else {
+        boundPort_.store(config_.port);
+    }
     listener_ = listener;
 }
 
@@ -851,7 +859,7 @@ void HttpServer::run() {
         workers_.emplace_back(&HttpServer::workerLoop, this);
     }
 
-    log("Listening on http://" + config_.host + ":" + std::to_string(config_.port) + " with " +
+    log("Listening on http://" + config_.host + ":" + std::to_string(boundPort_.load()) + " with " +
         std::to_string(config_.workerThreads) + " worker thread(s)");
 
     acceptLoop();
@@ -859,6 +867,7 @@ void HttpServer::run() {
     // Graceful shutdown: stop accepting, let workers finish what they hold.
     closeSocket(listener_);
     listener_ = kInvalidSocket;
+    boundPort_.store(0);
     pendingCv_.notify_all();
     for (auto& worker : workers_) {
         worker.join();

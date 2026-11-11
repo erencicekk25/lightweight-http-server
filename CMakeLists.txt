@@ -42,3 +42,13 @@ if(MSVC)
 else()
     target_compile_options(lhs_server PRIVATE -Wall -Wextra -Wpedantic -Wshadow)
 endif()
+
+# Tests: parser, response writer and an end-to-end run over real sockets.
+option(LHS_BUILD_TESTS "Build the test suite" ON)
+if(LHS_BUILD_TESTS)
+    enable_testing()
+    add_executable(lhs_tests tests/HttpServerTests.cpp)
+    target_link_libraries(lhs_tests PRIVATE lhs_core)
+    add_test(NAME lhs_tests COMMAND lhs_tests)
+    set_tests_properties(lhs_tests PROPERTIES TIMEOUT 60)
+endif()
